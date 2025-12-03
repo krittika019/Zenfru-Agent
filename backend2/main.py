@@ -137,15 +137,26 @@ app.mount("/static", StaticFiles(directory=Path(__file__).parent), name="static"
 @app.middleware("http")
 async def backend_status_middleware(request, call_next):
     path = request.url.path
+    # Skip external status updates for lightweight health checks to keep them fast
+    if path == "/healthz":
+        return await call_next(request)
+
     try:
         response = await call_next(request)
-        if response.status_code < 400:
-            update_fastapi_backend(True, f"{path} OK")
-        else:
-            update_fastapi_backend(False, f"{path} HTTP {response.status_code}")
+        # Best-effort: do not block the request path on external updates
+        try:
+            if response.status_code < 400:
+                update_fastapi_backend(True, f"{path} OK")
+            else:
+                update_fastapi_backend(False, f"{path} HTTP {response.status_code}")
+        except Exception:
+            pass
         return response
     except Exception as e:
-        update_fastapi_backend(False, f"{path} Exception: {e.__class__.__name__}")
+        try:
+            update_fastapi_backend(False, f"{path} Exception: {e.__class__.__name__}")
+        except Exception:
+            pass
         raise
 
 # Initialize GetKolla service

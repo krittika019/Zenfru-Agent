@@ -13,6 +13,7 @@ import base64
 
 # Import local cache service to fetch appointment details
 from .local_cache_service import LocalCacheService
+from .service_status_sheet import update_daily_email_report
 
 # Optional email imports - make email functionality optional
 try:
@@ -856,13 +857,25 @@ class PatientInteractionLogger:
             if EMAIL_AVAILABLE and self.config["email"]["recipients"] and self.config["email"]["username"]:
                 self._send_email_report(html_report, yesterday)
                 print(f"📧 Daily report sent at {now.strftime('%Y-%m-%d %I:%M %p %Z')} for {yesterday}")
+                try:
+                    update_daily_email_report(True, f"Email sent for {yesterday.strftime('%Y-%m-%d')}")
+                except Exception:
+                    pass
             else:
                 print(f"📧 Daily report generated but email not configured/available: {report_file}")
+                try:
+                    update_daily_email_report(True, f"Report generated (no email) for {yesterday.strftime('%Y-%m-%d')}")
+                except Exception:
+                    pass
                 
         except Exception as e:
             print(f"❌ Error generating/sending daily report: {e}")
             if EMAIL_AVAILABLE and self.config["fallback"]["backup_email"]:
                 self._send_fallback_notification(str(e))
+            try:
+                update_daily_email_report(False, f"Error: {str(e)[:120]}")
+            except Exception:
+                pass
     
     def _send_email_report(self, html_report: str, report_date: date):
         """Send email report"""

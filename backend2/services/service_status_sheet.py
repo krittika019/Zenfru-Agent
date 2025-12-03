@@ -43,6 +43,7 @@ SERVICES = {
     "mongodb": "MongoDB Database Connection",
     "openai": "OpenAI API",
     "kolla": "Kolla Integration",
+    "email": "Daily Email Report",
 }
 
 
@@ -139,6 +140,11 @@ def update_openai_usage(success: bool, detail: str):
 
 def update_kolla_integration(success: bool, detail: str):
     _update(SERVICES["kolla"], success, detail)
+
+
+def update_daily_email_report(success: bool, detail: str):
+    """Update status for daily email report generation/sending."""
+    _update(SERVICES["email"], success, detail)
 
 
 # Convenience aggregation for backend endpoint hits ------------------------
